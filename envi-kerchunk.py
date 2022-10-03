@@ -22,7 +22,12 @@ def string_encode(x):
 
 waves = np.array(dat.metadata["wavelength"], np.float32)
 waves_b64 = string_encode(waves)
-# s2 = np.frombuffer(base64.b64decode(s), dtype=np.float32)
+
+lines = np.arange(nlines, dtype="<i4")
+lines_b64 = string_encode(lines)
+
+samps = np.arange(nsamp, dtype="<i4")
+samps_b64 = string_encode(samps)
 
 file_size = fs.du(path.rstrip(".hdr"))
 
@@ -45,10 +50,11 @@ output = {
           "_ARRAY_DIMENSIONS": ["wavelength"]
       }),
       "wavelength/0": waves_b64,
+##################################################
       "sample/.zarray": ujson.dumps({
           "chunks": [nsamp],
           "compressor": None,
-          "dtype": "<f4",  # Float 32
+          "dtype": "<i4",
           "fill_value": None,
           "filters": None,
           "order": "C",
@@ -58,11 +64,12 @@ output = {
       "sample/.zattrs": ujson.dumps({
           "_ARRAY_DIMENSIONS": ["sample"]
       }),
-      "sample/0": string_encode(np.arange(nsamp, dtype="<i4")),
+      "sample/0": samps_b64,
+##################################################
       "line/.zarray": ujson.dumps({
           "chunks": [nlines],
           "compressor": None,
-          "dtype": "<f4",  # Float 32
+          "dtype": "<i4",
           "fill_value": None,
           "filters": None,
           "order": "C",
@@ -72,7 +79,8 @@ output = {
       "line/.zattrs": ujson.dumps({
           "_ARRAY_DIMENSIONS": ["line"]
       }),
-      "line/0": string_encode(np.arange(nlines, dtype="<i4")),
+      "line/0": lines_b64,
+##################################################
       "radiance/.zarray": ujson.dumps({
           "chunks": [nlines, len(waves), nsamp],
           "compressor": None,
@@ -92,7 +100,7 @@ output = {
 
 output_file = "test.json"
 with fs.open(output_file, "w") as of:
-    of.write(ujson.dumps(output))
+    of.write(ujson.dumps(output, indent=2))
 
 # Test
 dtest = xr.open_dataset("reference://", engine="zarr", backend_kwargs={
@@ -101,3 +109,6 @@ dtest = xr.open_dataset("reference://", engine="zarr", backend_kwargs={
         "fo": output_file
     }
 })
+
+# from matplotlib import pyplot as plt
+# dtest.isel(line=0, sample=0).radiance.plot(); plt.show()
