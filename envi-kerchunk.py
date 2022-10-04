@@ -10,6 +10,7 @@ import fsspec
 fs = fsspec.filesystem("file")
 
 rdn_path = "test-data/ang20170323t202244_rdn_7000-7010.hdr"
+# rdn_path = "../sbg-uncertainty/data/isofit-test-data/medium_chunk/ang20170323t202244_rdn_7k-8k.hdr"
 obs_path = rdn_path.replace("_rdn_", "_obs_")
 loc_path = rdn_path.replace("_rdn_", "_loc_")
 assert fs.exists(rdn_path)
@@ -17,8 +18,7 @@ assert fs.exists(obs_path)
 assert fs.exists(loc_path)
 
 dat = envi.open(rdn_path)
-obs = envi.open(obs_path)
-loc = envi.open(loc_path)
+# obs = envi.open(obs_path)
 
 nsamp = int(dat.metadata["samples"])
 nlines = int(dat.metadata["lines"])
@@ -108,12 +108,56 @@ radiance_dict = {
     **radiance_chunks
 }
 
+# Location file
+loc = envi.open(loc_path)
+loc_data = loc_path.rstrip(".hdr")
+lat_chunks = {
+    f"lat/{i}.0": [loc_data, (i*nsamp*3)*8, nsamp*8] for i in range(nlines)
+}
+lat_dict = {
+    "lat/.zarray": ujson.dumps({
+        "chunks": [1, nsamp],
+        "compressor": None,
+        "dtype": "<f8", # Data type 5 = 64-bit float
+        "fill_value": None,
+        "filters": None,
+        "order": "C",
+        "shape": [nlines, nsamp],
+        "zarr_format": 2
+    }),
+    "lat/.zattrs": ujson.dumps({
+        "_ARRAY_DIMENSIONS": ["line", "sample"]
+    }),
+    **lat_chunks
+}
+
+lon_chunks = {
+    f"lon/{i}.0": [loc_data, (i*nsamp*3 + nsamp)*8, nsamp*8] for i in range(nlines)
+}
+lon_dict = {
+    "lon/.zarray": ujson.dumps({
+        "chunks": [1, nsamp],
+        "compressor": None,
+        "dtype": "<f8", # Data type 5 = 64-bit float
+        "fill_value": None,
+        "filters": None,
+        "order": "C",
+        "shape": [nlines, nsamp],
+        "zarr_format": 2
+    }),
+    "lon/.zattrs": ujson.dumps({
+        "_ARRAY_DIMENSIONS": ["line", "sample"]
+    }),
+    **lon_chunks
+}
+
 output = {
   "version": 1,
   "refs": {
       ".zgroup": ujson.dumps({"zarr_format": 2}),
       ".zattrs": ujson.dumps({"Description": "Small chunk"}),
-      **waves_dict, **samps_dict, **lines_dict, **radiance_dict
+      **waves_dict, **samps_dict, **lines_dict,
+      **radiance_dict, **lat_dict, **lon_dict
   }
 }
 
@@ -129,5 +173,5 @@ dtest = xr.open_dataset("reference://", engine="zarr", backend_kwargs={
     }
 })
 
-from matplotlib import pyplot as plt
-dtest.sel(line=5, sample=3).radiance.plot(); plt.show()
+# from matplotlib import pyplot as plt
+# dtest.sel(line=5, sample=3).radiance.plot(); plt.show()
