@@ -1,5 +1,12 @@
 import fsspec
 import warnings
+import base64
+import numpy as np
+
+def string_encode(x):
+    bits = base64.b64encode(x)
+    s = str(bits).lstrip("b'").rstrip("'")
+    return f"base64:{s}"
 
 def read_envi_header(f):
     '''
@@ -12,6 +19,9 @@ def read_envi_header(f):
     dictionary as strings.  Header field names are treated as case
     insensitive and all keys in the dictionary are lowercase.
     '''
+
+    # ENVI header description: 
+    # https://www.l3harrisgeospatial.com/docs/enviheaderfiles.html
 
     try:
         starts_with_ENVI = f.readline().strip().startswith('ENVI')
@@ -72,3 +82,28 @@ def read_envi_header(f):
         return dict
     except:
         raise Exception()
+
+zarray_common = {
+    "compressor": None,
+    "fill_value": None,
+    "filters": None,
+    "order": "C",
+    "zarr_format": 2
+}
+
+# ENVI header description: 
+# https://www.l3harrisgeospatial.com/docs/enviheaderfiles.html
+
+envi_dtypes = {
+    "1": np.dtype("int8"),
+    "2": np.dtype("int16"),
+    "3": np.dtype("int32"),
+    "4": np.dtype("float32"),     # float32
+    "5": np.dtype("float64"),     # float64
+    "6": np.dtype("complex64"),     # complex64
+    "9": np.dtype("complex128"),   # complex128
+    "12": np.dtype("uint16"),
+    "13": np.dtype("uint32"),
+    "14": np.dtype("int64"),
+    "15": np.dtype("uint64")
+}

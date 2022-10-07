@@ -4,39 +4,9 @@ import fsspec
 import ujson
 import base64
 
-from read_envi_header import read_envi_header
-
-def string_encode(x):
-    bits = base64.b64encode(x)
-    s = str(bits).lstrip("b'").rstrip("'")
-    return f"base64:{s}"
+from utils import read_envi_header, string_encode, zarray_common, envi_dtypes
 
 def make_envi_kerchunk(rdn_path, loc_path, obs_path, output_file):
-
-    # ENVI header description: 
-    # https://www.l3harrisgeospatial.com/docs/enviheaderfiles.html
-
-    zarray_common = {
-        "compressor": None,
-        "fill_value": None,
-        "filters": None,
-        "order": "C",
-        "zarr_format": 2
-    }
-
-    envi_dtypes = {
-        "1": np.dtype("int8"),
-        "2": np.dtype("int16"),
-        "3": np.dtype("int32"),
-        "4": np.dtype("float32"),     # float32
-        "5": np.dtype("float64"),     # float64
-        "6": np.dtype("complex64"),     # complex64
-        "9": np.dtype("complex128"),   # complex128
-        "12": np.dtype("uint16"),
-        "13": np.dtype("uint32"),
-        "14": np.dtype("int64"),
-        "15": np.dtype("uint64")
-    }
 
     # assert fsi.exists(rdn_path)
     # assert fsi.exists(obs_path)
