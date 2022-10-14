@@ -1,9 +1,19 @@
 import xarray as xr
 import rioxarray
 
+dtest = xr.open_dataset("reference://", engine="zarr", backend_kwargs={
+    "consolidated": False,
+    "storage_options": {
+        "fo": "s3://dh-shift-curated/aviris/v1/gridded/zarr.json"
+    }
+})
+
+dsub = dtest.isel(x=5000,y=5000)
+%time dsubv = dsub.reflectance.values
+
 dat = xr.open_dataset("reference://", engine="zarr", backend_kwargs={
     "consolidated": False,
-    "storage_options": {"fo": "shift.json"}
+    "storage_options": {"fo": "s3://dh-shift-curated/aviris/v1/gridded/20220224_box_rfl_phase.json"}
 })
 
 dat.y.max()
